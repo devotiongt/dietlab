@@ -20,6 +20,10 @@ dist-ssr
 supabase/.temp/
 supabase/.branches/
 
+# SQL files
+*.sql
+**/*.sql
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
