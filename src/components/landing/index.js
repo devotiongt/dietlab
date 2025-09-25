@@ -1,0 +1,5 @@
+export { default as NavigationHeader } from './NavigationHeader.jsx'
+export { default as HeroSection } from './HeroSection.jsx'
+export { default as FeaturesSection } from './FeaturesSection.jsx'
+export { default as BenefitsSection } from './BenefitsSection.jsx'
+export { default as Footer } from './Footer.jsx'
