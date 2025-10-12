@@ -10,6 +10,8 @@ import MeasurementsHistory from './components/MeasurementsHistory'
 import PersonalInformation from './components/PersonalInformation'
 import ClinicalHistorySummary from './components/ClinicalHistorySummary'
 import PatientStatus from './components/PatientStatus'
+import MealPlansSummary from '../meal-plans/MealPlansSummary'
+import MealPlansList from '../meal-plans/MealPlansList'
 
 export default function PatientDetail({ patient, onBack, onEdit, onDelete, onArchive, onPatientUpdate }) {
   const navigate = useNavigate()
@@ -21,6 +23,7 @@ export default function PatientDetail({ patient, onBack, onEdit, onDelete, onArc
   const [error, setError] = useState(null)
   const [currentPatient, setCurrentPatient] = useState(patient)
   const [clinicalHistorySummary, setClinicalHistorySummary] = useState(null)
+  const [showMealPlansList, setShowMealPlansList] = useState(false)
 
   useEffect(() => {
     loadMeasurements()
@@ -68,6 +71,18 @@ export default function PatientDetail({ patient, onBack, onEdit, onDelete, onArc
 
   const handleShowClinicalHistory = () => {
     navigate(`/dashboard/patients/${patient.id}/clinical-history`)
+  }
+
+  const handleCreateMealPlan = () => {
+    navigate(`/dashboard/patients/${patient.id}/meal-plan/new`)
+  }
+
+  const handleEditMealPlan = (plan) => {
+    navigate(`/dashboard/patients/${patient.id}/meal-plan/${plan.id}/edit`)
+  }
+
+  const handleViewAllMealPlans = () => {
+    setShowMealPlansList(true)
   }
 
   const handleAddMeasurement = async (measurementData) => {
@@ -139,6 +154,17 @@ export default function PatientDetail({ patient, onBack, onEdit, onDelete, onArc
     setExpandedMeasurements(newExpanded)
   }
 
+  if (showMealPlansList) {
+    return (
+      <MealPlansList
+        patient={currentPatient}
+        onCreatePlan={handleCreateMealPlan}
+        onEditPlan={handleEditMealPlan}
+        onBack={() => setShowMealPlansList(false)}
+      />
+    )
+  }
+
   return (
     <div className="max-w-7xl mx-auto">
       <PatientHeader
@@ -166,6 +192,12 @@ export default function PatientDetail({ patient, onBack, onEdit, onDelete, onArc
             onToggleExpansion={toggleMeasurementExpansion}
             onClearError={() => setError(null)}
           />
+
+          <MealPlansSummary
+            patient={currentPatient}
+            onCreatePlan={handleCreateMealPlan}
+            onViewAllPlans={handleViewAllMealPlans}
+          />
         </div>
 
         {/* Sidebar */}
@@ -188,6 +220,7 @@ export default function PatientDetail({ patient, onBack, onEdit, onDelete, onArc
           }}
         />
       )}
+
     </div>
   )
 }

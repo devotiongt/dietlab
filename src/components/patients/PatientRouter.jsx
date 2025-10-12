@@ -6,6 +6,7 @@ import PatientDetail from './patient-detail/PatientDetail'
 import PatientForm from './patient-form/PatientForm'
 import ClinicalHistoryPage from '../../pages/ClinicalHistoryPage'
 import ClinicalHistoryEditPage from '../../pages/ClinicalHistoryEditPage'
+import MealPlanFormPage from './meal-plans/MealPlanFormPage'
 
 // Component to handle patient detail view
 function PatientDetailWrapper() {
@@ -164,6 +165,8 @@ export default function PatientRouter() {
       <Route path="/new" element={<PatientNewWrapper />} />
       <Route path="/:patientId" element={<PatientDetailWrapper />} />
       <Route path="/:patientId/edit" element={<PatientEditWrapper />} />
+      <Route path="/:patientId/meal-plans/new" element={<MealPlanFormPage />} />
+      <Route path="/:patientId/meal-plans/:planId/edit" element={<MealPlanFormPage />} />
       <Route path="/:patientId/clinical-history" element={<ClinicalHistoryPage />} />
       <Route path="/:patientId/clinical-history/medical" element={<ClinicalHistoryPage initialTab="medical" />} />
       <Route path="/:patientId/clinical-history/nutrition" element={<ClinicalHistoryPage initialTab="nutrition" />} />
