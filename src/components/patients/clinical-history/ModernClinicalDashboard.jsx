@@ -229,14 +229,65 @@ export default function ModernClinicalDashboard({
   onViewLabResults
 }) {
 
-  if (!patient || !clinicalHistory) {
+  if (!patient) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <div className="text-gray-400 mb-4">
             <TestTube className="h-16 w-16 mx-auto opacity-50" />
           </div>
-          <p className="text-gray-500 text-lg">No hay información clínica disponible</p>
+          <p className="text-gray-500 text-lg">No hay información del paciente disponible</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!clinicalHistory) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+          <div className="px-6 py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                {onBack && (
+                  <button
+                    onClick={onBack}
+                    className="inline-flex items-center text-gray-600 hover:text-gray-900"
+                  >
+                    <ArrowLeft className="h-5 w-5" />
+                  </button>
+                )}
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900">Historial Clínico</h1>
+                  <p className="text-xs text-gray-600">
+                    {patient.first_name} {patient.last_name}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Empty state */}
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center max-w-md">
+            <div className="text-gray-400 mb-6">
+              <Heart className="h-20 w-20 mx-auto opacity-50" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">No hay historial clínico</h2>
+            <p className="text-gray-500 mb-8">
+              Este paciente aún no tiene un historial clínico registrado.
+              Crea uno para comenzar a llevar el seguimiento médico y nutricional.
+            </p>
+            <button
+              onClick={onEdit}
+              className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-sm"
+            >
+              <Plus className="h-5 w-5 mr-2" />
+              Crear Historial Clínico
+            </button>
+          </div>
         </div>
       </div>
     )
