@@ -9,7 +9,7 @@ import PrivateRoute from './components/PrivateRoute'
 function App() {
   return (
     <AuthProvider>
-      <Router basename="/dietlab">
+      <Router>
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
