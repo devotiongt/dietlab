@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Utensils, ChefHat, Target, Clock, Users, Copy, Trash2, Edit, Filter, X, ChevronRight, ArrowLeft, Save, Info } from 'lucide-react';
+import { Search, Plus, Utensils, Target, Copy, Trash2, Edit, Filter, X, Save, Info } from 'lucide-react';
 import { dishesApi } from '../../lib/dishes';
-import { recipesApi } from '../../lib/recipes';
 import { useToast } from '../../hooks/useToast';
 
 const MEAL_TIMES = [
@@ -12,19 +11,6 @@ const MEAL_TIMES = [
   { id: 'dinner', name: 'Cena' }
 ];
 
-const RECIPE_CATEGORIES = [
-  { id: 'breakfast', name: 'Desayuno' },
-  { id: 'lunch', name: 'Almuerzo' },
-  { id: 'dinner', name: 'Cena' },
-  { id: 'snack', name: 'Colación' },
-  { id: 'beverage', name: 'Bebida' }
-];
-
-const DIFFICULTY_LEVELS = [
-  { id: 'easy', name: 'Fácil' },
-  { id: 'medium', name: 'Intermedio' },
-  { id: 'hard', name: 'Difícil' }
-];
 
 export default function DishSelectorWithSidebar({
   mealTime,
@@ -44,7 +30,7 @@ export default function DishSelectorWithSidebar({
 
   // Sidebar states
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarView, setSidebarView] = useState('details'); // 'details', 'new-dish', 'new-recipe', 'edit-dish', 'edit-recipe'
+  const [sidebarView, setSidebarView] = useState('details'); // 'details', 'new-dish', 'edit-dish'
   const [selectedDishForDetails, setSelectedDishForDetails] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
 

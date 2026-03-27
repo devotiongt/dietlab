@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ChevronRight, ChevronLeft, Check, AlertCircle, ArrowLeft } from 'lucide-react';
 import { mealPlansApi } from '../../../lib/meal-plans';
 import { patientsService } from '../../../services/patientsService';
+import { clinicalHistoryService } from '../../../services/clinicalHistoryService';
 import PlanBaseStep from './steps/PlanBaseStep';
 import MealDistributionStep from './steps/MealDistributionStep';
 import MealPlateConfigurationStep from './steps/MealPlateConfigurationStep';
@@ -27,6 +28,7 @@ export default function MealPlanFormPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [foodGroups, setFoodGroups] = useState([]);
+  const [clinicalHistory, setClinicalHistory] = useState(null);
   const [errors, setErrors] = useState({});
 
   // Form data
@@ -72,9 +74,14 @@ export default function MealPlanFormPage() {
     try {
       setLoading(true);
 
-      // Load patient data
+      // Load patient data and clinical history
       const patientData = await patientsService.getPatient(patientId);
       setPatient(patientData);
+
+      // Load clinical history (non-blocking)
+      clinicalHistoryService.getClinicalHistory(patientId)
+        .then(data => setClinicalHistory(data))
+        .catch(() => setClinicalHistory(null));
 
       // Load food groups
       const groups = await mealPlansApi.getFoodGroups();
@@ -592,6 +599,8 @@ export default function MealPlanFormPage() {
                 foodGroups={foodGroups}
                 errors={errors}
                 onChange={updateFormData}
+                patient={patient}
+                clinicalHistory={clinicalHistory}
               />
             )}
             {currentStep === 3 && (

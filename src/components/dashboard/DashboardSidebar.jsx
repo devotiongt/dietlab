@@ -9,7 +9,9 @@ import {
   LogOut,
   Home,
   Utensils,
-  FileText
+  FileText,
+  UtensilsCrossed,
+  ArrowLeftRight
 } from 'lucide-react'
 
 export default function DashboardSidebar({ sidebarOpen, setSidebarOpen, activeSection }) {
@@ -24,6 +26,8 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen, activeSe
   const menuItems = [
     { id: '', label: 'Inicio', icon: Home, path: '/dashboard' },
     { id: 'patients', label: 'Pacientes', icon: Users, path: '/dashboard/patients' },
+    { id: 'dishes', label: 'Platos', icon: UtensilsCrossed, path: '/dashboard/dishes' },
+    { id: 'exchange-list', label: 'Lista de Intercambio', icon: ArrowLeftRight, path: '/dashboard/exchange-list' },
     { id: 'diets', label: 'Planes Alimenticios', icon: Utensils, path: '/dashboard/diets' },
     { id: 'appointments', label: 'Citas', icon: Calendar, path: '/dashboard/appointments' },
     { id: 'reports', label: 'Reportes', icon: FileText, path: '/dashboard/reports' },

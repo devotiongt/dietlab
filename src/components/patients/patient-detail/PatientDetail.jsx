@@ -74,11 +74,11 @@ export default function PatientDetail({ patient, onBack, onEdit, onDelete, onArc
   }
 
   const handleCreateMealPlan = () => {
-    navigate(`/dashboard/patients/${patient.id}/meal-plan/new`)
+    navigate(`/dashboard/patients/${patient.id}/meal-plans/new`)
   }
 
   const handleEditMealPlan = (plan) => {
-    navigate(`/dashboard/patients/${patient.id}/meal-plan/${plan.id}/edit`)
+    navigate(`/dashboard/patients/${patient.id}/meal-plans/${plan.id}/edit`)
   }
 
   const handleViewAllMealPlans = () => {

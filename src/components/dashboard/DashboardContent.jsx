@@ -2,6 +2,8 @@ import { Routes, Route } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import PatientRouter from '../patients/PatientRouter'
 import OverviewContent from './content/OverviewContent'
+import DishesContent from './content/DishesContent'
+import ExchangeListContent from './content/ExchangeListContent'
 import DietsContent from './content/DietsContent'
 import AppointmentsContent from './content/AppointmentsContent'
 import ReportsContent from './content/ReportsContent'
@@ -42,6 +44,8 @@ export default function DashboardContent({ activeSection, menuItems }) {
         <Routes>
           <Route path="/" element={<OverviewContent />} />
           <Route path="/patients/*" element={<PatientRouter />} />
+          <Route path="/dishes" element={<DishesContent />} />
+          <Route path="/exchange-list" element={<ExchangeListContent />} />
           <Route path="/diets" element={<DietsContent />} />
           <Route path="/appointments" element={<AppointmentsContent />} />
           <Route path="/reports" element={<ReportsContent />} />

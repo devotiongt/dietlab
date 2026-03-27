@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Minus, Utensils, Target, Save, X, Search, ChefHat } from 'lucide-react';
+import { Plus, Minus, Utensils, Target, Save, X } from 'lucide-react';
 import { dishesApi } from '../../lib/dishes';
-import { recipesApi } from '../../lib/recipes';
 
 const MEAL_TIMES = [
   { id: 'breakfast', name: 'Desayuno' },
@@ -16,24 +15,14 @@ export default function DishBuilder({ dish = null, foodGroups, onSave, onCancel,
     name: '',
     description: '',
     meal_time: 'breakfast',
-    recipes: [], // [{ recipe_id, servings, recipe_data }]
+    food_group_portions: {},
+    ingredients: [{ ingredient: '', amount: '', notes: '' }],
+    instructions: '',
     is_public: false
   });
 
-  const [availableRecipes, setAvailableRecipes] = useState([]);
-  const [recipeSearch, setRecipeSearch] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [showRecipeSearch, setShowRecipeSearch] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
-
-  // Load available recipes
-  useEffect(() => {
-    if (isOpen) {
-      loadRecipes();
-    }
-  }, [isOpen]);
 
   // Block body scroll when modal is open
   useEffect(() => {
@@ -56,7 +45,9 @@ export default function DishBuilder({ dish = null, foodGroups, onSave, onCancel,
         name: dish.name || '',
         description: dish.description || '',
         meal_time: dish.meal_time || 'breakfast',
-        recipes: dish.recipes || [],
+        food_group_portions: dish.food_group_portions || {},
+        ingredients: dish.ingredients && dish.ingredients.length > 0 ? dish.ingredients : [{ ingredient: '', amount: '', notes: '' }],
+        instructions: dish.instructions || '',
         is_public: dish.is_public || false
       });
     } else {
@@ -65,38 +56,14 @@ export default function DishBuilder({ dish = null, foodGroups, onSave, onCancel,
         name: '',
         description: '',
         meal_time: 'breakfast',
-        recipes: [],
+        food_group_portions: {},
+        ingredients: [{ ingredient: '', amount: '', notes: '' }],
+        instructions: '',
         is_public: false
       });
     }
     setErrors({});
   }, [dish]);
-
-  // Search recipes when search term changes
-  useEffect(() => {
-    if (recipeSearch.trim()) {
-      const filtered = availableRecipes.filter(recipe =>
-        recipe.name.toLowerCase().includes(recipeSearch.toLowerCase()) ||
-        recipe.description?.toLowerCase().includes(recipeSearch.toLowerCase())
-      );
-      setSearchResults(filtered);
-    } else {
-      setSearchResults(availableRecipes);
-    }
-  }, [recipeSearch, availableRecipes]);
-
-  const loadRecipes = async () => {
-    setLoading(true);
-    try {
-      const recipes = await recipesApi.getRecipes();
-      setAvailableRecipes(recipes);
-      setSearchResults(recipes);
-    } catch (error) {
-      console.error('Error loading recipes:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const updateField = (field, value) => {
     setFormData(prev => ({
@@ -105,80 +72,46 @@ export default function DishBuilder({ dish = null, foodGroups, onSave, onCancel,
     }));
   };
 
-  const addRecipe = (recipe) => {
-    const existingIndex = formData.recipes.findIndex(r => r.recipe_id === recipe.id);
-
-    if (existingIndex >= 0) {
-      // If recipe already exists, increase servings
-      setFormData(prev => ({
-        ...prev,
-        recipes: prev.recipes.map((r, i) =>
-          i === existingIndex ? { ...r, servings: r.servings + 1 } : r
-        )
-      }));
-    } else {
-      // Add new recipe
-      setFormData(prev => ({
-        ...prev,
-        recipes: [
-          ...prev.recipes,
-          {
-            recipe_id: recipe.id,
-            servings: 1,
-            recipe_data: recipe // Store recipe data for display
-          }
-        ]
-      }));
-    }
-    setShowRecipeSearch(false);
-    setRecipeSearch('');
-  };
-
-  const updateRecipeServings = (index, servings) => {
+  const updateFoodGroupPortion = (groupId, value) => {
     setFormData(prev => ({
       ...prev,
-      recipes: prev.recipes.map((r, i) =>
-        i === index ? { ...r, servings: parseFloat(servings) || 1 } : r
+      food_group_portions: {
+        ...prev.food_group_portions,
+        [groupId]: parseFloat(value) || 0
+      }
+    }));
+  };
+
+  const addIngredient = () => {
+    setFormData(prev => ({
+      ...prev,
+      ingredients: [...prev.ingredients, { ingredient: '', amount: '', notes: '' }]
+    }));
+  };
+
+  const updateIngredient = (index, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      ingredients: prev.ingredients.map((ing, i) =>
+        i === index ? { ...ing, [field]: value } : ing
       )
     }));
   };
 
-  const removeRecipe = (index) => {
+  const removeIngredient = (index) => {
     setFormData(prev => ({
       ...prev,
-      recipes: prev.recipes.filter((_, i) => i !== index)
+      ingredients: prev.ingredients.filter((_, i) => i !== index)
     }));
   };
 
-  const calculateDishTotals = () => {
-    const totals = {};
-
-    formData.recipes.forEach(recipeItem => {
-      const recipe = recipeItem.recipe_data;
-      const servings = recipeItem.servings || 1;
-
-      if (recipe && recipe.food_group_portions) {
-        Object.entries(recipe.food_group_portions).forEach(([groupId, portions]) => {
-          if (!totals[groupId]) {
-            totals[groupId] = 0;
-          }
-          totals[groupId] += portions * servings;
-        });
-      }
-    });
-
-    return totals;
-  };
-
   const calculateNutrition = () => {
-    const dishTotals = calculateDishTotals();
-
     let totalCalories = 0;
     let totalProtein = 0;
     let totalCarbs = 0;
     let totalFat = 0;
 
-    Object.entries(dishTotals).forEach(([groupId, portions]) => {
+    Object.entries(formData.food_group_portions || {}).forEach(([groupId, portions]) => {
       const group = foodGroups.find(g => g.id === groupId);
       if (group && portions > 0) {
         totalCalories += group.calories_per_portion * portions;
@@ -192,8 +125,7 @@ export default function DishBuilder({ dish = null, foodGroups, onSave, onCancel,
       totalCalories,
       totalProtein,
       totalCarbs,
-      totalFat,
-      foodGroupTotals: dishTotals
+      totalFat
     };
   };
 
@@ -203,21 +135,31 @@ export default function DishBuilder({ dish = null, foodGroups, onSave, onCancel,
     setErrors({});
 
     // Validate
-    const validation = dishesApi.validateDish(formData);
-    if (!validation.isValid) {
-      setErrors(validation.errors);
+    if (!formData.name?.trim()) {
+      setErrors({ name: 'El nombre del plato es requerido' });
+      setSaving(false);
+      return;
+    }
+
+    if (!formData.food_group_portions || Object.keys(formData.food_group_portions).length === 0) {
+      setErrors({ food_group_portions: 'Debe especificar al menos un grupo alimentario' });
+      setSaving(false);
+      return;
+    }
+
+    const cleanedIngredients = formData.ingredients.filter(ing => ing.ingredient.trim() !== '');
+    if (cleanedIngredients.length === 0) {
+      setErrors({ ingredients: 'Debe especificar al menos un ingrediente' });
       setSaving(false);
       return;
     }
 
     try {
-      // Prepare dish data without recipe_data for storage
+      // Prepare dish data with cleaned ingredients
       const dishData = {
         ...formData,
-        recipes: formData.recipes.map(r => ({
-          recipe_id: r.recipe_id,
-          servings: r.servings
-        }))
+        ingredients: cleanedIngredients,
+        total_food_group_portions: formData.food_group_portions
       };
 
       let savedDish;
@@ -329,211 +271,153 @@ export default function DishBuilder({ dish = null, foodGroups, onSave, onCancel,
                   </div>
                 </div>
 
-                {/* Recipe Management */}
-                <div className="bg-orange-50 rounded-xl p-6">
+                {/* Food Groups */}
+                <div className="bg-blue-50 rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <Target className="h-5 w-5 mr-2 text-blue-600" />
+                    Grupos Alimentarios *
+                  </h3>
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {foodGroups.map(group => (
+                      <div key={group.id} className="flex items-center justify-between p-3 bg-white rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="w-4 h-4 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: group.color || '#6B7280' }}
+                          />
+                          <span className="font-medium text-gray-900">{group.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.5"
+                            value={formData.food_group_portions[group.id] || 0}
+                            onChange={(e) => updateFoodGroupPortion(group.id, e.target.value)}
+                            className="w-20 px-2 py-1 text-center border border-gray-300 rounded focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                          />
+                          <span className="text-sm text-gray-500">porciones</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {errors.food_group_portions && (
+                    <p className="text-red-500 text-sm mt-2">{errors.food_group_portions}</p>
+                  )}
+                </div>
+
+                {/* Ingredients */}
+                <div className="bg-green-50 rounded-xl p-6">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Recetas *</h3>
+                    <h3 className="text-lg font-semibold text-gray-900">Ingredientes *</h3>
                     <button
                       type="button"
-                      onClick={() => setShowRecipeSearch(!showRecipeSearch)}
-                      className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-2"
+                      onClick={addIngredient}
+                      className="px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm flex items-center gap-1"
                     >
                       <Plus className="h-4 w-4" />
-                      Agregar Receta
+                      Agregar
                     </button>
                   </div>
-
-                  {/* Recipe Search */}
-                  {showRecipeSearch && (
-                    <div className="mb-4 p-4 bg-white rounded-lg border">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Search className="h-4 w-4 text-gray-400" />
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {formData.ingredients.map((ing, index) => (
+                      <div key={index} className="flex gap-2">
                         <input
                           type="text"
-                          value={recipeSearch}
-                          onChange={(e) => setRecipeSearch(e.target.value)}
-                          placeholder="Buscar recetas..."
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-400 focus:border-transparent"
+                          value={ing.amount}
+                          onChange={(e) => updateIngredient(index, 'amount', e.target.value)}
+                          placeholder="Cantidad"
+                          className="w-24 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-green-400 focus:border-transparent"
                         />
+                        <input
+                          type="text"
+                          value={ing.ingredient}
+                          onChange={(e) => updateIngredient(index, 'ingredient', e.target.value)}
+                          placeholder="Ingrediente"
+                          className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-green-400 focus:border-transparent"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeIngredient(index)}
+                          className="text-red-500 hover:text-red-700 px-2"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
                       </div>
-
-                      <div className="max-h-60 overflow-y-auto space-y-2">
-                        {loading ? (
-                          <p className="text-gray-500 text-center py-4">Cargando recetas...</p>
-                        ) : searchResults.length > 0 ? (
-                          searchResults.map(recipe => (
-                            <div
-                              key={recipe.id}
-                              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer"
-                              onClick={() => addRecipe(recipe)}
-                            >
-                              <div>
-                                <h4 className="font-medium text-gray-900">{recipe.name}</h4>
-                                <p className="text-sm text-gray-600">{recipe.description}</p>
-                                <span className="inline-block px-2 py-1 bg-gray-200 text-xs text-gray-700 rounded-full mt-1">
-                                  {MEAL_TIMES.find(t => t.id === recipe.category)?.name || recipe.category}
-                                </span>
-                              </div>
-                              <Plus className="h-5 w-5 text-orange-500" />
-                            </div>
-                          ))
-                        ) : (
-                          <p className="text-gray-500 text-center py-4">No se encontraron recetas</p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Selected Recipes */}
-                  <div className="space-y-3">
-                    {formData.recipes.length > 0 ? (
-                      formData.recipes.map((recipeItem, index) => (
-                        <div key={index} className="flex items-center gap-3 p-3 bg-white rounded-lg border">
-                          <ChefHat className="h-5 w-5 text-orange-500 flex-shrink-0" />
-                          <div className="flex-1">
-                            <h4 className="font-medium text-gray-900">
-                              {recipeItem.recipe_data?.name || 'Receta'}
-                            </h4>
-                            <p className="text-sm text-gray-600">
-                              {recipeItem.recipe_data?.description}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="number"
-                              min="0.5"
-                              step="0.5"
-                              value={recipeItem.servings}
-                              onChange={(e) => updateRecipeServings(index, e.target.value)}
-                              className="w-20 px-2 py-1 text-center border border-gray-300 rounded focus:ring-2 focus:ring-orange-400 focus:border-transparent"
-                            />
-                            <span className="text-sm text-gray-500">porciones</span>
-                            <button
-                              type="button"
-                              onClick={() => removeRecipe(index)}
-                              className="p-1 text-red-600 hover:text-red-800 transition-colors"
-                            >
-                              <Minus className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-gray-500 text-center py-4">No hay recetas agregadas</p>
-                    )}
+                    ))}
                   </div>
-                  {errors.recipes && (
-                    <p className="text-red-500 text-sm mt-2">{errors.recipes}</p>
+                  {errors.ingredients && (
+                    <p className="text-red-500 text-sm mt-2">{errors.ingredients}</p>
                   )}
+                </div>
+
+                {/* Instructions */}
+                <div className="bg-purple-50 rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Instrucciones de Preparación</h3>
+                  <textarea
+                    value={formData.instructions}
+                    onChange={(e) => updateField('instructions', e.target.value)}
+                    rows={6}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-transparent"
+                    placeholder="Describe cómo preparar el plato..."
+                  />
                 </div>
               </div>
 
               {/* Right Column - Nutrition Summary */}
               <div className="space-y-6">
-                {/* Food Group Totals */}
-                {Object.keys(nutrition.foodGroupTotals).length > 0 && (
-                  <div className="bg-blue-50 rounded-xl p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                      <Target className="h-5 w-5 mr-2 text-blue-600" />
-                      Totales por Grupo Alimentario
-                    </h3>
-
-                    <div className="space-y-3">
-                      {Object.entries(nutrition.foodGroupTotals).map(([groupId, total]) => {
-                        const group = foodGroups.find(g => g.id === groupId);
-                        if (!group || total === 0) return null;
-
-                        return (
-                          <div key={groupId} className="flex items-center justify-between p-3 bg-white rounded-lg">
-                            <div className="flex items-center gap-3">
-                              <div
-                                className="w-4 h-4 rounded-full"
-                                style={{ backgroundColor: group.color || '#6B7280' }}
-                              />
-                              <span className="font-medium text-gray-900">{group.name}</span>
-                            </div>
-                            <span className="font-semibold text-blue-600">
-                              {total.toFixed(1)} porciones
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
                 {/* Nutrition Summary */}
-                {nutrition.totalCalories > 0 && (
-                  <div className="bg-green-50 rounded-xl p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Información Nutricional</h3>
+                <div className="bg-gradient-to-br from-green-50 to-blue-50 rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Resumen Nutricional</h3>
+                  {nutrition.totalCalories > 0 ? (
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-white p-4 rounded-lg text-center">
+                      <div className="bg-white p-4 rounded-lg text-center shadow-sm">
                         <div className="text-2xl font-bold text-green-600">
                           {nutrition.totalCalories.toFixed(0)}
                         </div>
                         <div className="text-sm text-gray-600">Calorías</div>
                       </div>
-                      <div className="bg-white p-4 rounded-lg text-center">
+                      <div className="bg-white p-4 rounded-lg text-center shadow-sm">
                         <div className="text-2xl font-bold text-blue-600">
                           {nutrition.totalProtein.toFixed(1)}g
                         </div>
                         <div className="text-sm text-gray-600">Proteína</div>
                       </div>
-                      <div className="bg-white p-4 rounded-lg text-center">
+                      <div className="bg-white p-4 rounded-lg text-center shadow-sm">
                         <div className="text-2xl font-bold text-yellow-600">
                           {nutrition.totalCarbs.toFixed(1)}g
                         </div>
                         <div className="text-sm text-gray-600">Carbohidratos</div>
                       </div>
-                      <div className="bg-white p-4 rounded-lg text-center">
+                      <div className="bg-white p-4 rounded-lg text-center shadow-sm">
                         <div className="text-2xl font-bold text-orange-600">
                           {nutrition.totalFat.toFixed(1)}g
                         </div>
                         <div className="text-sm text-gray-600">Grasas</div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  ) : (
+                    <p className="text-gray-500 text-center py-8">Agrega grupos alimentarios para ver la información nutricional</p>
+                  )}
+                </div>
 
-                {/* Recipe Details */}
-                {formData.recipes.length > 0 && (
+                {/* Instructions Preview */}
+                {formData.instructions && (
                   <div className="bg-purple-50 rounded-xl p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Detalles de Recetas</h3>
-                    <div className="space-y-4">
-                      {formData.recipes.map((recipeItem, index) => {
-                        const recipe = recipeItem.recipe_data;
-                        if (!recipe) return null;
-
-                        return (
-                          <div key={index} className="bg-white p-4 rounded-lg">
-                            <div className="flex items-center justify-between mb-2">
-                              <h4 className="font-medium text-gray-900">{recipe.name}</h4>
-                              <span className="text-sm text-purple-600 font-medium">
-                                {recipeItem.servings}x
-                              </span>
-                            </div>
-
-                            {recipe.ingredients && recipe.ingredients.length > 0 && (
-                              <div className="text-sm text-gray-600">
-                                <p className="font-medium mb-1">Ingredientes:</p>
-                                <ul className="list-disc list-inside space-y-1">
-                                  {recipe.ingredients.slice(0, 3).map((ing, i) => (
-                                    <li key={i}>{ing.amount} {ing.ingredient}</li>
-                                  ))}
-                                  {recipe.ingredients.length > 3 && (
-                                    <li className="text-gray-500">
-                                      ... y {recipe.ingredients.length - 3} más
-                                    </li>
-                                  )}
-                                </ul>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Vista Previa de Instrucciones</h3>
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{formData.instructions}</p>
                   </div>
                 )}
+
+                {/* Tips */}
+                <div className="bg-yellow-50 rounded-xl p-4 border border-yellow-200">
+                  <h4 className="text-sm font-semibold text-yellow-800 mb-2">💡 Consejos</h4>
+                  <ul className="text-xs text-yellow-700 space-y-1">
+                    <li>• Define las porciones de grupos alimentarios según el plan nutricional</li>
+                    <li>• Lista todos los ingredientes con cantidades específicas</li>
+                    <li>• Incluye instrucciones claras de preparación</li>
+                  </ul>
+                </div>
               </div>
             </div>
           </div>
@@ -554,7 +438,7 @@ export default function DishBuilder({ dish = null, foodGroups, onSave, onCancel,
                 </button>
                 <button
                   type="submit"
-                  disabled={saving || formData.recipes.length === 0}
+                  disabled={saving}
                   className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 transition-colors flex items-center gap-2"
                 >
                   <Save className="h-4 w-4" />

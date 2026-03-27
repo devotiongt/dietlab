@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Utensils, ChefHat, Target, Clock, Users, Copy, Trash2, Edit, Filter } from 'lucide-react';
+import { Search, Plus, Utensils, Target, Copy, Trash2, Edit, Filter } from 'lucide-react';
 import { dishesApi } from '../../lib/dishes';
-import { recipesApi } from '../../lib/recipes';
 import DishBuilder from './DishBuilder';
-import RecipeBuilder from '../recipes/RecipeBuilder';
 
 const MEAL_TIMES = [
   { id: 'breakfast', name: 'Desayuno' },
@@ -29,9 +27,7 @@ export default function DishSelector({
   const [filterMealTime, setFilterMealTime] = useState(mealTime || '');
   const [loading, setLoading] = useState(false);
   const [showDishBuilder, setShowDishBuilder] = useState(false);
-  const [showRecipeBuilder, setShowRecipeBuilder] = useState(false);
   const [editingDish, setEditingDish] = useState(null);
-  const [editingRecipe, setEditingRecipe] = useState(null);
 
   // Load dishes
   useEffect(() => {
@@ -96,10 +92,6 @@ export default function DishSelector({
     setShowDishBuilder(true);
   };
 
-  const handleCreateNewRecipe = () => {
-    setEditingRecipe(null);
-    setShowRecipeBuilder(true);
-  };
 
   const handleEditDish = (dish, e) => {
     e.stopPropagation();
@@ -135,11 +127,6 @@ export default function DishSelector({
     await loadDishes();
   };
 
-  const handleRecipeSaved = async (recipe) => {
-    setShowRecipeBuilder(false);
-    setEditingRecipe(null);
-    // Recipes don't need dish reload, but we could refresh if needed
-  };
 
   const calculateDishMatch = (dish) => {
     if (!dish.total_food_group_portions || Object.keys(targetPortions).length === 0) {
@@ -255,13 +242,6 @@ export default function DishSelector({
 
               <div className="flex gap-2">
                 <button
-                  onClick={handleCreateNewRecipe}
-                  className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-2"
-                >
-                  <ChefHat className="h-4 w-4" />
-                  Nueva Receta
-                </button>
-                <button
                   onClick={handleCreateNewDish}
                   className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-2"
                 >
@@ -328,12 +308,6 @@ export default function DishSelector({
                           <span className="bg-gray-100 px-2 py-1 rounded-full">
                             {MEAL_TIMES.find(t => t.id === dish.meal_time)?.name || dish.meal_time}
                           </span>
-                          {dish.recipes && (
-                            <span className="flex items-center gap-1">
-                              <ChefHat className="h-3 w-3" />
-                              {dish.recipes.length} receta{dish.recipes.length !== 1 ? 's' : ''}
-                            </span>
-                          )}
                         </div>
                       </div>
 
@@ -452,14 +426,6 @@ export default function DishSelector({
         onSave={handleDishSaved}
         onCancel={() => setShowDishBuilder(false)}
         isOpen={showDishBuilder}
-      />
-
-      <RecipeBuilder
-        recipe={editingRecipe}
-        foodGroups={foodGroups}
-        onSave={handleRecipeSaved}
-        onCancel={() => setShowRecipeBuilder(false)}
-        isOpen={showRecipeBuilder}
       />
     </>
   );

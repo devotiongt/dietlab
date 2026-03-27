@@ -1,5 +1,4 @@
 import { supabase } from './supabase';
-import { recipesApi } from './recipes';
 
 // Dishes API
 export const dishesApi = {
@@ -7,10 +6,7 @@ export const dishesApi = {
   async getDishes(filters = {}) {
     let query = supabase
       .from('dishes')
-      .select(`
-        *,
-        recipes:dishes_recipes_view(*)
-      `)
+      .select('*')
       .eq('is_active', true);
 
     // Apply filters
@@ -32,10 +28,7 @@ export const dishesApi = {
   async getUserDishes() {
     const { data, error } = await supabase
       .from('dishes')
-      .select(`
-        *,
-        recipes:dishes_recipes_view(*)
-      `)
+      .select('*')
       .eq('created_by', (await supabase.auth.getUser()).data.user?.id)
       .eq('is_active', true)
       .order('created_at', { ascending: false });
@@ -48,10 +41,7 @@ export const dishesApi = {
   async getDish(dishId) {
     const { data, error } = await supabase
       .from('dishes')
-      .select(`
-        *,
-        recipes:dishes_recipes_view(*)
-      `)
+      .select('*')
       .eq('id', dishId)
       .eq('is_active', true)
       .single();
@@ -65,14 +55,10 @@ export const dishesApi = {
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) throw new Error('User not authenticated');
 
-    // Calculate total food group portions from recipes
-    const totalPortions = await this.calculateDishTotals(dishData.recipes);
-
     const { data, error } = await supabase
       .from('dishes')
       .insert({
         ...dishData,
-        total_food_group_portions: totalPortions,
         created_by: user.id
       })
       .select()
@@ -84,11 +70,6 @@ export const dishesApi = {
 
   // Update a dish
   async updateDish(dishId, updates) {
-    // Recalculate totals if recipes changed
-    if (updates.recipes) {
-      updates.total_food_group_portions = await this.calculateDishTotals(updates.recipes);
-    }
-
     const { data, error } = await supabase
       .from('dishes')
       .update(updates)
@@ -126,24 +107,6 @@ export const dishesApi = {
     });
   },
 
-  // Calculate total food group portions from recipes
-  async calculateDishTotals(recipesList) {
-    const totals = {};
-
-    for (const recipeItem of recipesList) {
-      const recipe = await recipesApi.getRecipe(recipeItem.recipe_id);
-      const servings = recipeItem.servings || 1;
-
-      Object.entries(recipe.food_group_portions).forEach(([groupId, portions]) => {
-        if (!totals[groupId]) {
-          totals[groupId] = 0;
-        }
-        totals[groupId] += portions * servings;
-      });
-    }
-
-    return totals;
-  },
 
   // Get dishes for a specific meal plan
   async getMealPlanDishes(mealPlanId) {
@@ -151,10 +114,7 @@ export const dishesApi = {
       .from('meal_plan_dishes')
       .select(`
         *,
-        dish:dishes(
-          *,
-          recipes:dishes_recipes_view(*)
-        )
+        dish:dishes(*)
       `)
       .eq('meal_plan_id', mealPlanId)
       .order('week_number')
@@ -232,19 +192,12 @@ export const dishesApi = {
       errors.name = 'El nombre del plato es requerido';
     }
 
-    if (!dishData.recipes || dishData.recipes.length === 0) {
-      errors.recipes = 'Debe incluir al menos una receta';
+    if (!dishData.food_group_portions || Object.keys(dishData.food_group_portions).length === 0) {
+      errors.food_group_portions = 'Debe especificar al menos un grupo alimentario';
     }
 
-    if (dishData.recipes) {
-      dishData.recipes.forEach((recipe, index) => {
-        if (!recipe.recipe_id) {
-          errors[`recipe_${index}_id`] = `La receta ${index + 1} es requerida`;
-        }
-        if (!recipe.servings || recipe.servings <= 0) {
-          errors[`recipe_${index}_servings`] = `Las porciones de la receta ${index + 1} deben ser mayores a 0`;
-        }
-      });
+    if (!dishData.ingredients || dishData.ingredients.length === 0) {
+      errors.ingredients = 'Debe especificar al menos un ingrediente';
     }
 
     return {
@@ -253,16 +206,14 @@ export const dishesApi = {
     };
   },
 
-  // Calculate dish nutrition from its recipes
-  async calculateDishNutrition(dishData, foodGroups) {
-    const totals = await this.calculateDishTotals(dishData.recipes);
-
+  // Calculate dish nutrition from food group portions
+  calculateDishNutrition(foodGroupPortions, foodGroups) {
     let totalCalories = 0;
     let totalProtein = 0;
     let totalCarbs = 0;
     let totalFat = 0;
 
-    Object.entries(totals).forEach(([groupId, portions]) => {
+    Object.entries(foodGroupPortions || {}).forEach(([groupId, portions]) => {
       const group = foodGroups.find(g => g.id === groupId);
       if (group && portions > 0) {
         totalCalories += group.calories_per_portion * portions;
@@ -276,8 +227,7 @@ export const dishesApi = {
       totalCalories,
       totalProtein,
       totalCarbs,
-      totalFat,
-      foodGroupTotals: totals
+      totalFat
     };
   }
 };

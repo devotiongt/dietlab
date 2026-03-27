@@ -21,7 +21,7 @@ const DAYS_OF_WEEK = [
   { id: 7, name: 'Domingo', shortName: 'Dom' }
 ];
 
-export default function MealPlateConfigurationStep({ formData, foodGroups, errors, onChange }) {
+export default function MealPlateConfigurationStep({ formData, foodGroups, errors, onChange, patient, clinicalHistory }) {
   // Current selected week (0-indexed)
   const [selectedWeek, setSelectedWeek] = useState(0);
   const [showDishSelector, setShowDishSelector] = useState(false);
@@ -65,6 +65,53 @@ export default function MealPlateConfigurationStep({ formData, foodGroups, error
 
   // Get current week's meal plates
   const currentWeekPlates = mealPlates[`week_${selectedWeek}`] || {};
+
+  // Build patient context for dish creation
+  const patientContext = useMemo(() => {
+    if (!patient) return null;
+
+    const parseJSON = (jsonStr, fallback = []) => {
+      if (!jsonStr) return fallback;
+      try { return JSON.parse(jsonStr); } catch { return fallback; }
+    };
+
+    const diseases = [];
+    const allergies = [];
+
+    if (clinicalHistory) {
+      const personalHistory = parseJSON(clinicalHistory.personal_pathological_history);
+      personalHistory.forEach(item => {
+        if (item.disease?.toLowerCase().includes('alergia')) {
+          allergies.push(item.notes || item.disease);
+        } else if (item.disease) {
+          diseases.push(item.disease);
+        }
+      });
+
+      const giDisorders = parseJSON(clinicalHistory.gastrointestinal_disorders);
+      giDisorders.forEach(item => {
+        if (item.disorder || item.disease) {
+          diseases.push(item.disorder || item.disease);
+        }
+      });
+
+      const eatingHabits = parseJSON(clinicalHistory.eating_habits, {});
+      const restricciones = eatingHabits.restricciones_suplementacion || {};
+      if (restricciones.alergias_alimentarias?.length > 0) {
+        allergies.push(...restricciones.alergias_alimentarias);
+      }
+      if (restricciones.intolerancias?.length > 0) {
+        allergies.push(...restricciones.intolerancias.map(i => `Intolerancia: ${i}`));
+      }
+    }
+
+    return {
+      name: `${patient.first_name} ${patient.last_name}`,
+      diseases: [...new Set(diseases)],
+      allergies: [...new Set(allergies)],
+      vetCalories: formData.vet_calories
+    };
+  }, [patient, clinicalHistory, formData.vet_calories]);
 
   // Get target portions from distribution step
   const getTargetPortions = (weekIndex, mealTimeId) => {
@@ -600,6 +647,7 @@ export default function MealPlateConfigurationStep({ formData, foodGroups, error
           setShowDishSelector(false);
           setSelectorContext(null);
         }}
+        patientContext={patientContext}
       />
     </div>
   );
