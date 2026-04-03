@@ -74,9 +74,7 @@ export default function DishesTable({ foodGroups }) {
     loadDishes();
   };
 
-  const calculateDishNutrition = (dish) => {
-    return dishesApi.calculateDishNutrition(dish.food_group_portions || {}, foodGroups);
-  };
+  const calculateDishNutrition = (dish) => dishesApi.getDishNutrition(dish, foodGroups);
 
   const filteredDishes = dishes.filter(dish =>
     dish.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

@@ -133,9 +133,7 @@ export default function DishSelectorSidebar({
     return Math.max(0, 100 - (averageDifference * 50));
   };
 
-  const calculateNutrition = (foodGroupPortions) => {
-    return dishesApi.calculateDishNutrition(foodGroupPortions, foodGroups);
-  };
+  const calculateNutrition = (dish) => dishesApi.getDishNutrition(dish, foodGroups);
 
   const changeView = (view, data = null) => {
     setCurrentView(view);

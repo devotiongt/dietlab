@@ -149,24 +149,7 @@ export default function DishSelectorWithSidebar({
     return Math.max(0, 100 - (averageDifference * 50));
   };
 
-  const calculateNutrition = (foodGroupPortions) => {
-    let totalCalories = 0;
-    let totalProtein = 0;
-    let totalCarbs = 0;
-    let totalFat = 0;
-
-    Object.entries(foodGroupPortions || {}).forEach(([groupId, portions]) => {
-      const group = foodGroups.find(g => g.id === groupId);
-      if (group && portions > 0) {
-        totalCalories += group.calories_per_portion * portions;
-        totalProtein += group.protein_per_portion * portions;
-        totalCarbs += group.carbs_per_portion * portions;
-        totalFat += group.fat_per_portion * portions;
-      }
-    });
-
-    return { totalCalories, totalProtein, totalCarbs, totalFat };
-  };
+  const calculateNutrition = (dish) => dishesApi.getDishNutrition(dish, foodGroups);
 
   const openSidebar = (view, data = null) => {
     setSidebarView(view);
@@ -490,7 +473,7 @@ export default function DishSelectorWithSidebar({
             ) : filteredDishes.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredDishes.map(dish => {
-                  const nutrition = calculateNutrition(dish.total_food_group_portions);
+                  const nutrition = calculateNutrition(dish);
                   const isSelected = selectedDish?.id === dish.id;
 
                   return (
@@ -607,7 +590,7 @@ export default function DishSelectorWithSidebar({
                 <div className="bg-blue-50 rounded-lg p-4">
                   <h5 className="font-semibold text-gray-900 mb-3">Información Nutricional</h5>
                   {(() => {
-                    const nutrition = calculateNutrition(selectedDishForDetails.total_food_group_portions);
+                    const nutrition = calculateNutrition(selectedDishForDetails);
                     return (
                       <div className="grid grid-cols-2 gap-3">
                         <div className="bg-white p-3 rounded text-center">

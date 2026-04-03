@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, Clock, ChefHat, Flame, Users } from 'lucide-react';
+import { dishesApi } from '../../lib/dishes';
 
 const MEAL_TIMES = {
   breakfast: 'Desayuno',
@@ -12,32 +13,7 @@ const MEAL_TIMES = {
 export default function DishViewModal({ dish, foodGroups, isOpen, onClose }) {
   if (!isOpen || !dish) return null;
 
-  // Calculate nutrition
-  const calculateNutrition = (foodGroupPortions) => {
-    let totalCalories = 0;
-    let totalProtein = 0;
-    let totalCarbs = 0;
-    let totalFat = 0;
-
-    Object.entries(foodGroupPortions || {}).forEach(([groupId, portions]) => {
-      const group = foodGroups.find(g => g.id === groupId);
-      if (group && portions > 0) {
-        totalCalories += group.calories_per_portion * portions;
-        totalProtein += group.protein_per_portion * portions;
-        totalCarbs += group.carbs_per_portion * portions;
-        totalFat += group.fat_per_portion * portions;
-      }
-    });
-
-    return {
-      totalCalories,
-      totalProtein,
-      totalCarbs,
-      totalFat
-    };
-  };
-
-  const nutrition = calculateNutrition(dish.food_group_portions);
+  const nutrition = dishesApi.getDishNutrition(dish, foodGroups);
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">

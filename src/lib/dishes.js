@@ -206,28 +206,32 @@ export const dishesApi = {
     };
   },
 
-  // Calculate dish nutrition from food group portions
+  // Calculate dish nutrition from food group portions (low-level, takes portions object)
   calculateDishNutrition(foodGroupPortions, foodGroups) {
+    return this.getDishNutrition({ food_group_portions: foodGroupPortions }, foodGroups);
+  },
+
+  // Calculate nutrition for a dish object, with fallback from total_food_group_portions to food_group_portions
+  getDishNutrition(dish, foodGroups) {
+    const portions = dish?.total_food_group_portions && Object.keys(dish.total_food_group_portions).length > 0
+      ? dish.total_food_group_portions
+      : dish?.food_group_portions;
+
     let totalCalories = 0;
     let totalProtein = 0;
     let totalCarbs = 0;
     let totalFat = 0;
 
-    Object.entries(foodGroupPortions || {}).forEach(([groupId, portions]) => {
+    Object.entries(portions || {}).forEach(([groupId, amount]) => {
       const group = foodGroups.find(g => g.id === groupId);
-      if (group && portions > 0) {
-        totalCalories += group.calories_per_portion * portions;
-        totalProtein += group.protein_per_portion * portions;
-        totalCarbs += group.carbs_per_portion * portions;
-        totalFat += group.fat_per_portion * portions;
+      if (group && amount > 0) {
+        totalCalories += group.calories_per_portion * amount;
+        totalProtein += group.protein_per_portion * amount;
+        totalCarbs += group.carbs_per_portion * amount;
+        totalFat += group.fat_per_portion * amount;
       }
     });
 
-    return {
-      totalCalories,
-      totalProtein,
-      totalCarbs,
-      totalFat
-    };
+    return { totalCalories, totalProtein, totalCarbs, totalFat };
   }
 };

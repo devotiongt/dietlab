@@ -104,7 +104,7 @@ export default function DishList({
         ) : dishes.length > 0 ? (
           <div className="space-y-3">
             {dishes.map(dish => {
-              const nutrition = calculateNutrition(dish.total_food_group_portions);
+              const nutrition = calculateNutrition(dish);
               const isSelected = selectedDish?.id === dish.id;
 
               return (

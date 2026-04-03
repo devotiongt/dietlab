@@ -10,7 +10,7 @@ export default function DishDetails({
 }) {
   if (!dish) return null;
 
-  const nutrition = calculateNutrition(dish.food_group_portions);
+  const nutrition = calculateNutrition(dish);
 
   return (
     <div className="flex flex-col h-full">

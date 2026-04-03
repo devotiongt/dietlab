@@ -118,9 +118,10 @@ export default function DishForm({
     onUpdate({ ...dishData, [field]: value });
   };
 
-  const updateIngredient = (index, field, value) => {
+  const updateIngredient = (index, fields, value) => {
+    const updates = typeof fields === 'object' ? fields : { [fields]: value };
     const newIngredients = dishData.ingredients.map((ing, i) =>
-      i === index ? { ...ing, [field]: value } : ing
+      i === index ? { ...ing, ...updates } : ing
     );
     onUpdate({ ...dishData, ingredients: newIngredients });
   };
@@ -344,7 +345,7 @@ export default function DishForm({
           </div>
 
           {/* === INGREDIENTES === */}
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+          <div className="bg-white border border-gray-200 rounded-xl">
             <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
               <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                 <ChefHat className="h-4 w-4 text-green-600" />
@@ -420,12 +421,11 @@ export default function DishForm({
                           <ChevronDown className="h-3 w-3 text-gray-400 flex-shrink-0" />
                         </button>
                         {openFoodGroupDropdown === index && (
-                          <div className="absolute z-20 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-1 max-h-48 overflow-y-auto">
+                          <div className="absolute z-[100] mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-1 max-h-48 overflow-y-auto">
                             <button
                               type="button"
                               onClick={() => {
-                                updateIngredient(index, 'food_group_id', '');
-                                updateIngredient(index, 'food_group_name', '');
+                                updateIngredient(index, { food_group_id: '', food_group_name: '' });
                                 setOpenFoodGroupDropdown(null);
                               }}
                               className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-gray-400 hover:bg-gray-50"
@@ -439,8 +439,7 @@ export default function DishForm({
                                   key={group.id}
                                   type="button"
                                   onClick={() => {
-                                    updateIngredient(index, 'food_group_id', group.id);
-                                    updateIngredient(index, 'food_group_name', group.name);
+                                    updateIngredient(index, { food_group_id: group.id, food_group_name: group.name });
                                     setOpenFoodGroupDropdown(null);
                                   }}
                                   className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-green-50 ${

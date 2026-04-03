@@ -106,27 +106,7 @@ export default function DishBuilder({ dish = null, foodGroups, onSave, onCancel,
   };
 
   const calculateNutrition = () => {
-    let totalCalories = 0;
-    let totalProtein = 0;
-    let totalCarbs = 0;
-    let totalFat = 0;
-
-    Object.entries(formData.food_group_portions || {}).forEach(([groupId, portions]) => {
-      const group = foodGroups.find(g => g.id === groupId);
-      if (group && portions > 0) {
-        totalCalories += group.calories_per_portion * portions;
-        totalProtein += group.protein_per_portion * portions;
-        totalCarbs += group.carbs_per_portion * portions;
-        totalFat += group.fat_per_portion * portions;
-      }
-    });
-
-    return {
-      totalCalories,
-      totalProtein,
-      totalCarbs,
-      totalFat
-    };
+    return dishesApi.getDishNutrition(formData, foodGroups);
   };
 
   const handleSubmit = async (e) => {
