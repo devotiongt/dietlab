@@ -6,6 +6,7 @@ import Register from './components/Register'
 import Dashboard from './components/Dashboard'
 import PrivateRoute from './components/PrivateRoute'
 
+
 function App() {
   return (
     <AuthProvider>
